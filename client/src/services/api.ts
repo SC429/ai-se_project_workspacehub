@@ -58,8 +58,7 @@ export const unwrapResponse = async <T>(
           }
         | undefined;
 
-      const message =
-        payload?.message ?? error.message ?? "Request failed";
+      const message = payload?.message ?? error.message ?? "Request failed";
 
       throw new Error(message);
     }

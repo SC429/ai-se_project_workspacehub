@@ -80,21 +80,15 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     void hydrate();
   }, [logout, refreshSession, token]);
 
-  const login = useCallback(
-    async (payload: LoginPayload) => {
-      const session = await authService.login(payload);
-      applySession(session.token, session.user, session.organization);
-    },
-    [],
-  );
+  const login = useCallback(async (payload: LoginPayload) => {
+    const session = await authService.login(payload);
+    applySession(session.token, session.user, session.organization);
+  }, []);
 
-  const register = useCallback(
-    async (payload: RegisterPayload) => {
-      const session = await authService.register(payload);
-      applySession(session.token, session.user, session.organization);
-    },
-    [],
-  );
+  const register = useCallback(async (payload: RegisterPayload) => {
+    const session = await authService.register(payload);
+    applySession(session.token, session.user, session.organization);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -115,7 +109,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         return Boolean(organization?.featureFlags[featureKey]);
       },
     }),
-    [token, user, organization, loading, login, register, logout, refreshSession],
+    [
+      token,
+      user,
+      organization,
+      loading,
+      login,
+      register,
+      logout,
+      refreshSession,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
