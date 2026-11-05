@@ -1,4 +1,4 @@
-import type { Booking, Project, Task, User, UserRole } from "../types/models";
+import type { Booking, Project, Task, User } from "../types/models";
 import { isPrivilegedRole } from "./permissions.test";
 
 export const canEditProject = (user: User | null, project: Project) => {
