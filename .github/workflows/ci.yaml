@@ -36,7 +36,7 @@ jobs:
         run: npm run build --workspace client
 
   lint:
-    runs: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +51,7 @@ jobs:
         run: npm run lint
 
   test-client:
-    runs: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
