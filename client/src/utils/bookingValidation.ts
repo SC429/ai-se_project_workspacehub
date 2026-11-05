@@ -1,4 +1,9 @@
-import { BookingFormState } from "../pages/BookingsPage";
+export interface BookingFormState {
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt: string;
+}
 
 export const getBookingFormErrors = (
   formState: BookingFormState,
@@ -7,6 +12,8 @@ export const getBookingFormErrors = (
 
   if (!formState.title.trim()) {
     errors.title = "Booking title is required.";
+  } else if (formState.title.trim().length < 3) {
+    errors.title = "Booking title must be at least 3 characters.";
   }
 
   if (!formState.description.trim()) {
@@ -21,24 +28,26 @@ export const getBookingFormErrors = (
     errors.endsAt = "End time is required.";
   }
 
-  if (
-    formState.startsAt &&
-    formState.endsAt &&
-    !Number.isNaN(new Date(formState.startsAt).getTime()) &&
-    !Number.isNaN(new Date(formState.endsAt).getTime()) &&
-    new Date(formState.endsAt).getTime() <=
-      new Date(formState.startsAt).getTime()
-  ) {
-    errors.endsAt = "End time must be after start time.";
+  const start = formState.startsAt ? new Date(formState.startsAt) : null;
+  const end = formState.endsAt ? new Date(formState.endsAt) : null;
+
+  const hasInvalidDate =
+    (formState.startsAt && Number.isNaN(start?.getTime() ?? NaN)) ||
+    (formState.endsAt && Number.isNaN(end?.getTime() ?? NaN));
+
+  if (hasInvalidDate) {
+    errors.startsAt = "Please enter valid start and end times.";
+    errors.endsAt = "Please enter valid start and end times.";
   }
 
   if (
-    (formState.startsAt &&
-      Number.isNaN(new Date(formState.startsAt).getTime())) ||
-    (formState.endsAt && Number.isNaN(new Date(formState.endsAt).getTime()))
+    start &&
+    end &&
+    !Number.isNaN(start.getTime()) &&
+    !Number.isNaN(end.getTime()) &&
+    end.getTime() <= start.getTime()
   ) {
-    errors.startsAt = "Please enter valid start and end times.";
-    errors.endsAt = "Please enter valid start and end times.";
+    errors.endsAt = "End time must be after start time.";
   }
 
   return errors;
