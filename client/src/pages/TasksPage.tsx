@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { PageHeader } from "../components/PageHeader";
 import { StatusPanel } from "../components/StatusPanel";
 import { useAuth } from "../hooks/useAuth";
@@ -12,11 +7,8 @@ import { taskService } from "../services/taskService";
 import { userService } from "../services/userService";
 import type { Project, Task, User } from "../types/models";
 import { formatDateInput } from "../utils/date";
-import {
-  canDeleteResources,
-  canEditTask,
-} from "../utils/permissions";
-import { isPrivilegedRole } from "../utils/permissions.test";
+import { canDeleteResources, canEditTask } from "../utils/permissions";
+import { isPrivilegedRole } from "../utils/permissions";
 
 interface TaskFormState {
   projectId: string;

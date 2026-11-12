@@ -8,7 +8,7 @@ import type { ProjectWithTaskCount } from "../types/models";
 import { useAuth } from "../hooks/useAuth";
 import { canDeleteResources } from "../utils/permissions";
 import { buildProjectWithTaskCount } from "../utils/projectMetrics";
-import { canCreateProjects } from "../utils/permissions.test";
+import { canCreateProjects } from "../utils/permissions";
 
 export const ProjectsPage = () => {
   const { user } = useAuth();

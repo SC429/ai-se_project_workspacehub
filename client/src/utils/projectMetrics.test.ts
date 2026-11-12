@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Project, Task } from "../types/models";
 import { buildProjectWithTaskCount } from "./projectMetrics";
 
-const makeTask = (
-  overrides: Partial<Task> = {},
-): Task => ({
+const makeTask = (overrides: Partial<Task> = {}): Task => ({
   _id: overrides._id ?? "task-1",
   organizationId: overrides.organizationId ?? "org-1",
   projectId: overrides.projectId ?? "project-1",
@@ -83,7 +81,11 @@ describe("buildProjectWithTaskCount", () => {
   it("preserves project fields and counts only matching project tasks in mixed data", () => {
     const tasks: Task[] = [
       makeTask({ _id: "task-1", projectId: "project-1", title: "Task A" }),
-      makeTask({ _id: "task-2", projectId: "project-999", title: "Other project" }),
+      makeTask({
+        _id: "task-2",
+        projectId: "project-999",
+        title: "Other project",
+      }),
       makeTask({ _id: "task-3", projectId: "project-1", title: "Task B" }),
       makeTask({ _id: "task-4", projectId: "project-1", title: "Task C" }),
     ];

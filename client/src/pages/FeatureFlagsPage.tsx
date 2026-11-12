@@ -4,7 +4,7 @@ import { PageHeader } from "../components/PageHeader";
 import { useAuth } from "../hooks/useAuth";
 import { organizationService } from "../services/organizationService";
 import type { FeatureFlags } from "../types/models";
-import { isPrivilegedRole } from "../utils/permissions.test";
+import { isPrivilegedRole } from "../utils/permissions";
 
 export const FeatureFlagsPage = () => {
   const { organization, setOrganizationState, user } = useAuth();

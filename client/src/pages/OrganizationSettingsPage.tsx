@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { PageHeader } from "../components/PageHeader";
 import { useAuth } from "../hooks/useAuth";
 import { organizationService } from "../services/organizationService";
-import { isPrivilegedRole } from "../utils/permissions.test";
+import { isPrivilegedRole } from "../utils/permissions";
 
 export const OrganizationSettingsPage = () => {
   const { organization, setOrganizationState, user } = useAuth();

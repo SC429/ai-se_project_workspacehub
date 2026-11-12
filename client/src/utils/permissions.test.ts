@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { User, UserRole } from "../types/models";
-
-export const isPrivilegedRole = (role?: UserRole | null) => {
-  return role === "owner" || role === "admin";
-};
-
-export const canCreateProjects = (user: User | null) => {
-  return isPrivilegedRole(user?.role);
-};
+import { isPrivilegedRole, canCreateProjects } from "./permissions";
 
 describe("permissions", () => {
   describe("isPrivilegedRole", () => {

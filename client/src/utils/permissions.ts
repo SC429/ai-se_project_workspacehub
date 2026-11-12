@@ -1,5 +1,13 @@
 import type { Booking, Project, Task, User } from "../types/models";
-import { isPrivilegedRole } from "./permissions.test";
+import { UserRole } from "../types/models";
+
+export const isPrivilegedRole = (role?: UserRole | null) => {
+  return role === "owner" || role === "admin";
+};
+
+export const canCreateProjects = (user: User | null) => {
+  return isPrivilegedRole(user?.role);
+};
 
 export const canEditProject = (user: User | null, project: Project) => {
   if (!user) {
