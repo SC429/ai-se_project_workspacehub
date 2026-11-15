@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  getBookingFormErrors,
   type BookingFormState,
+  validateBookingFormState,
 } from "./bookingValidation";
 
-describe("getBookingFormErrors", () => {
+describe("validateBookingFormState", () => {
   it("returns errors for required fields", () => {
     const formState: BookingFormState = {
       title: "",
@@ -13,7 +13,7 @@ describe("getBookingFormErrors", () => {
       endsAt: "",
     };
 
-    const errors = getBookingFormErrors(formState);
+    const errors = validateBookingFormState(formState);
 
     expect(errors.title).toBe("Booking title is required.");
     expect(errors.description).toBe("Booking description is required.");
@@ -29,7 +29,7 @@ describe("getBookingFormErrors", () => {
       endsAt: "2026-11-05T11:00",
     };
 
-    const errors = getBookingFormErrors(formState);
+    const errors = validateBookingFormState(formState);
 
     expect(errors.title).toBe("Booking title must be at least 3 characters.");
   });
@@ -42,7 +42,7 @@ describe("getBookingFormErrors", () => {
       endsAt: "also-not-a-date",
     };
 
-    const errors = getBookingFormErrors(formState);
+    const errors = validateBookingFormState(formState);
 
     expect(errors.startsAt).toBe("Please enter valid start and end times.");
     expect(errors.endsAt).toBe("Please enter valid start and end times.");
@@ -56,7 +56,7 @@ describe("getBookingFormErrors", () => {
       endsAt: "2026-11-05T10:00",
     };
 
-    const errors = getBookingFormErrors(formState);
+    const errors = validateBookingFormState(formState);
 
     expect(errors.endsAt).toBe("End time must be after start time.");
   });
@@ -69,7 +69,7 @@ describe("getBookingFormErrors", () => {
       endsAt: "2026-11-05T10:00",
     };
 
-    const errors = getBookingFormErrors(formState);
+    const errors = validateBookingFormState(formState);
 
     expect(errors.endsAt).toBe("End time must be after start time.");
   });

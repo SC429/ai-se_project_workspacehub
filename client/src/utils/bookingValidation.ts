@@ -5,7 +5,7 @@ export interface BookingFormState {
   endsAt: string;
 }
 
-export const getBookingFormErrors = (
+export const validateBookingFormState = (
   formState: BookingFormState,
 ): Partial<Record<keyof BookingFormState, string>> => {
   const errors: Partial<Record<keyof BookingFormState, string>> = {};
@@ -28,12 +28,12 @@ export const getBookingFormErrors = (
     errors.endsAt = "End time is required.";
   }
 
-  const start = formState.startsAt ? new Date(formState.startsAt) : null;
-  const end = formState.endsAt ? new Date(formState.endsAt) : null;
+  const startsAtDate = formState.startsAt ? new Date(formState.startsAt) : null;
+  const endsAtDate = formState.endsAt ? new Date(formState.endsAt) : null;
 
   const hasInvalidDate =
-    (formState.startsAt && Number.isNaN(start?.getTime() ?? NaN)) ||
-    (formState.endsAt && Number.isNaN(end?.getTime() ?? NaN));
+    (formState.startsAt && Number.isNaN(startsAtDate?.getTime() ?? NaN)) ||
+    (formState.endsAt && Number.isNaN(endsAtDate?.getTime() ?? NaN));
 
   if (hasInvalidDate) {
     errors.startsAt = "Please enter valid start and end times.";
@@ -41,11 +41,11 @@ export const getBookingFormErrors = (
   }
 
   if (
-    start &&
-    end &&
-    !Number.isNaN(start.getTime()) &&
-    !Number.isNaN(end.getTime()) &&
-    end.getTime() <= start.getTime()
+    startsAtDate &&
+    endsAtDate &&
+    !Number.isNaN(startsAtDate.getTime()) &&
+    !Number.isNaN(endsAtDate.getTime()) &&
+    endsAtDate.getTime() <= startsAtDate.getTime()
   ) {
     errors.endsAt = "End time must be after start time.";
   }

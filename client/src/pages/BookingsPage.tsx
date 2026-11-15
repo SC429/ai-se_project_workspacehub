@@ -4,23 +4,12 @@ import { StatusPanel } from "../components/StatusPanel";
 import { useAuth } from "../hooks/useAuth";
 import { bookingService } from "../services/bookingService";
 import type { Booking } from "../types/models";
-import { formatDateTimeInput } from "../utils/date";
+import {
+  type BookingFormState,
+  validateBookingFormState,
+} from "../utils/bookingValidation";
 import { canDeleteResources, canEditBooking } from "../utils/permissions";
-import { getBookingFormErrors } from "../utils/bookingValidation";
-
-export interface BookingFormState {
-  title: string;
-  description: string;
-  startsAt: string;
-  endsAt: string;
-}
-
-const buildBookingFormState = (booking: Booking): BookingFormState => ({
-  title: booking.title,
-  description: booking.description,
-  startsAt: formatDateTimeInput(booking.startsAt),
-  endsAt: formatDateTimeInput(booking.endsAt),
-});
+import { formatDateTimeInput } from "../utils/date";
 
 export const BookingsPage = () => {
   const { isFeatureEnabled, user } = useAuth();
@@ -68,7 +57,12 @@ export const BookingsPage = () => {
           Object.fromEntries(
             nextBookings.map((booking) => [
               booking._id,
-              buildBookingFormState(booking),
+              {
+                title: booking.title,
+                description: booking.description,
+                startsAt: booking.startsAt,
+                endsAt: booking.endsAt,
+              },
             ]),
           ),
         );
@@ -103,12 +97,12 @@ export const BookingsPage = () => {
     }));
   };
 
-  const createValidation = getBookingFormErrors(createState);
+  const createValidation = validateBookingFormState(createState);
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const validationErrors = getBookingFormErrors(createState);
+    const validationErrors = validateBookingFormState(createState);
     const hasErrors = Object.keys(validationErrors).length > 0;
 
     if (hasErrors) {
@@ -132,7 +126,12 @@ export const BookingsPage = () => {
       );
       setBookingEdits((current) => ({
         ...current,
-        [booking._id]: buildBookingFormState(booking),
+        [booking._id]: {
+          title: booking.title,
+          description: booking.description,
+          startsAt: booking.startsAt,
+          endsAt: booking.endsAt,
+        },
       }));
       setCreateState({
         title: "",
@@ -146,11 +145,9 @@ export const BookingsPage = () => {
         startsAt: false,
         endsAt: false,
       });
-    } catch (createError) {
+    } catch (error) {
       setCreateError(
-        createError instanceof Error
-          ? createError.message
-          : "Unable to create booking",
+        error instanceof Error ? error.message : "Unable to create booking",
       );
     }
   };
@@ -185,7 +182,7 @@ export const BookingsPage = () => {
       return;
     }
 
-    const validationErrors = getBookingFormErrors(bookingDraft);
+    const validationErrors = validateBookingFormState(bookingDraft);
     const hasErrors = Object.keys(validationErrors).length > 0;
 
     if (hasErrors) {
@@ -213,7 +210,12 @@ export const BookingsPage = () => {
       );
       setBookingEdits((current) => ({
         ...current,
-        [bookingId]: buildBookingFormState(updatedBooking),
+        [bookingId]: {
+          title: updatedBooking.title,
+          description: updatedBooking.description,
+          startsAt: updatedBooking.startsAt,
+          endsAt: updatedBooking.endsAt,
+        },
       }));
       setBookingErrors((current) => ({ ...current, [bookingId]: "" }));
       setBookingTouched((current) => ({
@@ -280,7 +282,9 @@ export const BookingsPage = () => {
       <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
         <form
           className="rounded-3xl bg-white p-6 shadow-sm"
-          onSubmit={void handleCreate}
+          onSubmit={(event) => {
+            void handleCreate(event);
+          }}
         >
           <h2 className="text-xl font-semibold text-ink">Create booking</h2>
           <div className="mt-4 space-y-4">
@@ -384,7 +388,7 @@ export const BookingsPage = () => {
               const formState = bookingEdits[booking._id];
               const fieldState = bookingTouched[booking._id] ?? {};
               const draftErrors = formState
-                ? getBookingFormErrors(formState)
+                ? validateBookingFormState(formState)
                 : {};
 
               return (
