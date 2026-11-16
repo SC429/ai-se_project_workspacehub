@@ -3,20 +3,14 @@ import { PageHeader } from "../components/PageHeader";
 import { StatusPanel } from "../components/StatusPanel";
 import { useAuth } from "../hooks/useAuth";
 import { bookingService } from "../services/bookingService";
-import type { Booking } from "../types/models";
 import {
   type BookingFormState,
   validateBookingFormState,
 } from "../utils/bookingValidation";
-import { canDeleteResources, canEditBooking } from "../utils/permissions";
-import { formatDateTimeInput } from "../utils/date";
 
 export const BookingsPage = () => {
-  const { isFeatureEnabled, user } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [bookingEdits, setBookingEdits] = useState<
-    Record<string, BookingFormState>
-  >({});
+  const { isFeatureEnabled } = useAuth();
+
   const [createState, setCreateState] = useState<BookingFormState>({
     title: "",
     description: "",
@@ -31,71 +25,21 @@ export const BookingsPage = () => {
     startsAt: false,
     endsAt: false,
   });
-  const [bookingTouched, setBookingTouched] = useState<
-    Record<string, Partial<Record<keyof BookingFormState, boolean>>>
-  >({});
   const [loading, setLoading] = useState(true);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [bookingErrors, setBookingErrors] = useState<Record<string, string>>(
-    {},
-  );
 
   useEffect(() => {
-    const loadBookings = async () => {
+    const initializePage = () => {
       if (!isFeatureEnabled("scheduling")) {
         setLoading(false);
         return;
       }
 
-      setLoading(true);
-      setCreateError(null);
-
-      try {
-        const nextBookings = await bookingService.list();
-        setBookings(nextBookings);
-        setBookingEdits(
-          Object.fromEntries(
-            nextBookings.map((booking) => [
-              booking._id,
-              {
-                title: booking.title,
-                description: booking.description,
-                startsAt: booking.startsAt,
-                endsAt: booking.endsAt,
-              },
-            ]),
-          ),
-        );
-      } catch (loadError) {
-        setCreateError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Unable to load bookings",
-        );
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     };
 
-    void loadBookings();
+    initializePage();
   }, [isFeatureEnabled]);
-
-  const markCreateTouched = (field: keyof BookingFormState) => {
-    setCreateTouched((current) => ({ ...current, [field]: true }));
-  };
-
-  const markBookingTouched = (
-    bookingId: string,
-    field: keyof BookingFormState,
-  ) => {
-    setBookingTouched((current) => ({
-      ...current,
-      [bookingId]: {
-        ...current[bookingId],
-        [field]: true,
-      },
-    }));
-  };
 
   const createValidation = validateBookingFormState(createState);
 
@@ -103,36 +47,15 @@ export const BookingsPage = () => {
     event.preventDefault();
 
     const validationErrors = validateBookingFormState(createState);
-    const hasErrors = Object.keys(validationErrors).length > 0;
-
-    if (hasErrors) {
-      setCreateTouched({
-        title: true,
-        description: true,
-        startsAt: true,
-        endsAt: true,
-      });
+    if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
     setCreateError(null);
 
     try {
-      const booking = await bookingService.create(createState);
-      setBookings((current) =>
-        [...current, booking].sort((left, right) =>
-          left.startsAt.localeCompare(right.startsAt),
-        ),
-      );
-      setBookingEdits((current) => ({
-        ...current,
-        [booking._id]: {
-          title: booking.title,
-          description: booking.description,
-          startsAt: booking.startsAt,
-          endsAt: booking.endsAt,
-        },
-      }));
+      await bookingService.create(createState);
+
       setCreateState({
         title: "",
         description: "",
@@ -149,109 +72,6 @@ export const BookingsPage = () => {
       setCreateError(
         error instanceof Error ? error.message : "Unable to create booking",
       );
-    }
-  };
-
-  const handleEdit = (
-    bookingId: string,
-    field: keyof BookingFormState,
-    value: string,
-  ) => {
-    setBookingEdits((current) => ({
-      ...current,
-      [bookingId]: {
-        ...(current[bookingId] ?? {
-          title: "",
-          description: "",
-          startsAt: "",
-          endsAt: "",
-        }),
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleSave = async (bookingId: string) => {
-    const bookingDraft = bookingEdits[bookingId];
-
-    if (!bookingDraft) {
-      setBookingErrors((current) => ({
-        ...current,
-        [bookingId]: "Booking form is unavailable.",
-      }));
-      return;
-    }
-
-    const validationErrors = validateBookingFormState(bookingDraft);
-    const hasErrors = Object.keys(validationErrors).length > 0;
-
-    if (hasErrors) {
-      setBookingTouched((current) => ({
-        ...current,
-        [bookingId]: {
-          title: true,
-          description: true,
-          startsAt: true,
-          endsAt: true,
-        },
-      }));
-      return;
-    }
-
-    try {
-      const updatedBooking = await bookingService.update(
-        bookingId,
-        bookingDraft,
-      );
-      setBookings((current) =>
-        current.map((booking) =>
-          booking._id === bookingId ? updatedBooking : booking,
-        ),
-      );
-      setBookingEdits((current) => ({
-        ...current,
-        [bookingId]: {
-          title: updatedBooking.title,
-          description: updatedBooking.description,
-          startsAt: updatedBooking.startsAt,
-          endsAt: updatedBooking.endsAt,
-        },
-      }));
-      setBookingErrors((current) => ({ ...current, [bookingId]: "" }));
-      setBookingTouched((current) => ({
-        ...current,
-        [bookingId]: {
-          title: false,
-          description: false,
-          startsAt: false,
-          endsAt: false,
-        },
-      }));
-    } catch (saveError) {
-      setBookingErrors((current) => ({
-        ...current,
-        [bookingId]:
-          saveError instanceof Error
-            ? saveError.message
-            : "Unable to update booking",
-      }));
-    }
-  };
-
-  const handleDelete = async (bookingId: string) => {
-    try {
-      await bookingService.delete(bookingId);
-      setBookings((current) =>
-        current.filter((booking) => booking._id !== bookingId),
-      );
-    } catch (deleteError) {
-      setBookingErrors((current) => ({
-        ...current,
-        [bookingId]:
-          deleteError instanceof Error
-            ? deleteError.message
-            : "Unable to delete booking",
-      }));
     }
   };
 
@@ -279,6 +99,7 @@ export const BookingsPage = () => {
         description="Manage simple shared bookings with conflict prevention on the API."
         title="Bookings"
       />
+
       <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
         <form
           className="rounded-3xl bg-white p-6 shadow-sm"
@@ -287,11 +108,14 @@ export const BookingsPage = () => {
           }}
         >
           <h2 className="text-xl font-semibold text-ink">Create booking</h2>
+
           <div className="mt-4 space-y-4">
             <div>
               <input
                 className="w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3 placeholder:text-[#94A3B880]"
-                onBlur={() => markCreateTouched("title")}
+                onBlur={() =>
+                  setCreateTouched((current) => ({ ...current, title: true }))
+                }
                 onChange={(event) =>
                   setCreateState((current) => ({
                     ...current,
@@ -311,7 +135,12 @@ export const BookingsPage = () => {
             <div>
               <textarea
                 className="min-h-28 w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3 placeholder:text-[#94A3B880]"
-                onBlur={() => markCreateTouched("description")}
+                onBlur={() =>
+                  setCreateTouched((current) => ({
+                    ...current,
+                    description: true,
+                  }))
+                }
                 onChange={(event) =>
                   setCreateState((current) => ({
                     ...current,
@@ -331,7 +160,12 @@ export const BookingsPage = () => {
             <div>
               <input
                 className="w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3"
-                onBlur={() => markCreateTouched("startsAt")}
+                onBlur={() =>
+                  setCreateTouched((current) => ({
+                    ...current,
+                    startsAt: true,
+                  }))
+                }
                 onChange={(event) =>
                   setCreateState((current) => ({
                     ...current,
@@ -351,7 +185,12 @@ export const BookingsPage = () => {
             <div>
               <input
                 className="w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3"
-                onBlur={() => markCreateTouched("endsAt")}
+                onBlur={() =>
+                  setCreateTouched((current) => ({
+                    ...current,
+                    endsAt: true,
+                  }))
+                }
                 onChange={(event) =>
                   setCreateState((current) => ({
                     ...current,
@@ -380,154 +219,6 @@ export const BookingsPage = () => {
             </button>
           </div>
         </form>
-
-        {bookings.length ? (
-          <ul className="space-y-4">
-            {bookings.map((booking) => {
-              const canEdit = canEditBooking(user, booking);
-              const formState = bookingEdits[booking._id];
-              const fieldState = bookingTouched[booking._id] ?? {};
-              const draftErrors = formState
-                ? validateBookingFormState(formState)
-                : {};
-
-              return (
-                <li key={booking._id}>
-                  <article className="rounded-3xl bg-white p-6 shadow-sm">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="md:col-span-2">
-                        <input
-                          className="w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3 disabled:bg-slate-100"
-                          disabled={!canEdit}
-                          onBlur={() =>
-                            markBookingTouched(booking._id, "title")
-                          }
-                          onChange={(event) =>
-                            handleEdit(booking._id, "title", event.target.value)
-                          }
-                          value={formState?.title ?? booking.title}
-                        />
-                        {fieldState.title && draftErrors.title ? (
-                          <p className="mt-1 text-sm text-danger">
-                            {draftErrors.title}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <textarea
-                          className="min-h-24 w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3 disabled:bg-slate-100"
-                          disabled={!canEdit}
-                          onBlur={() =>
-                            markBookingTouched(booking._id, "description")
-                          }
-                          onChange={(event) =>
-                            handleEdit(
-                              booking._id,
-                              "description",
-                              event.target.value,
-                            )
-                          }
-                          value={formState?.description ?? booking.description}
-                        />
-                        {fieldState.description && draftErrors.description ? (
-                          <p className="mt-1 text-sm text-danger">
-                            {draftErrors.description}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div>
-                        <input
-                          className="w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3 disabled:bg-slate-100"
-                          disabled={!canEdit}
-                          onBlur={() =>
-                            markBookingTouched(booking._id, "startsAt")
-                          }
-                          onChange={(event) =>
-                            handleEdit(
-                              booking._id,
-                              "startsAt",
-                              event.target.value,
-                            )
-                          }
-                          type="datetime-local"
-                          value={
-                            formState?.startsAt ??
-                            formatDateTimeInput(booking.startsAt)
-                          }
-                        />
-                        {fieldState.startsAt && draftErrors.startsAt ? (
-                          <p className="mt-1 text-sm text-danger">
-                            {draftErrors.startsAt}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div>
-                        <input
-                          className="w-full rounded-2xl border border-slate-200 transition hover:border-slate-300 px-4 py-3 disabled:bg-slate-100"
-                          disabled={!canEdit}
-                          onBlur={() =>
-                            markBookingTouched(booking._id, "endsAt")
-                          }
-                          onChange={(event) =>
-                            handleEdit(
-                              booking._id,
-                              "endsAt",
-                              event.target.value,
-                            )
-                          }
-                          type="datetime-local"
-                          value={
-                            formState?.endsAt ??
-                            formatDateTimeInput(booking.endsAt)
-                          }
-                        />
-                        {fieldState.endsAt && draftErrors.endsAt ? (
-                          <p className="mt-1 text-sm text-danger">
-                            {draftErrors.endsAt}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {bookingErrors[booking._id] ? (
-                      <p className="mt-4 text-sm text-danger">
-                        {bookingErrors[booking._id]}
-                      </p>
-                    ) : null}
-
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button
-                        className="rounded-[10px] bg-ink px-4 py-2 text-sm font-medium text-white transition hover:opacity-80 active:opacity-70 disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={!canEdit}
-                        onClick={() => void handleSave(booking._id)}
-                        type="button"
-                      >
-                        Save
-                      </button>
-                      {canDeleteResources(user) ? (
-                        <button
-                          className="rounded-[10px] px-5 py-2.5 text-sm font-normal text-danger transition hover:bg-rose-50 active:opacity-70"
-                          onClick={() => void handleDelete(booking._id)}
-                          type="button"
-                        >
-                          Delete
-                        </button>
-                      ) : null}
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <StatusPanel
-            title="No bookings"
-            message="Add the first scheduling entry for this organization."
-          />
-        )}
       </section>
     </div>
   );
